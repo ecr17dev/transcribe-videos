@@ -78,7 +78,7 @@ function reset() {
 <template>
   <div class="app">
     <header class="app-header">
-      <h1 @click="reset" class="logo">Transcribe<span class="accent">Videos</span></h1>
+      <img src="/logo.png" alt="TranscribeVideos" class="logo-img" @click="reset" />
       <button class="settings-btn" @click="showSettings = true" title="Configuracion">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <circle cx="12" cy="12" r="3"/>
@@ -180,12 +180,10 @@ function reset() {
   background: #21262d;
 }
 
-.logo {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin: 0;
+.logo-img {
+  height: 32px;
   cursor: pointer;
-  letter-spacing: -0.02em;
+  user-select: none;
 }
 
 .logo .accent {
