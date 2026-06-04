@@ -1,0 +1,16 @@
+{
+  "name": "transcribe-videos",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm run build --prefix client",
+    "start": "npm run build && npm start --prefix server",
+    "dev": "npx -y concurrently -n server,client -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "test": "node scripts/test.js"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.7",
+    "openai": "^4.83.0"
+  }
+}

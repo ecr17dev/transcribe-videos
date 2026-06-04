@@ -1,0 +1,20 @@
+{
+  "name": "transcribe-videos-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file=../.env src/index.js",
+    "dev": "node --watch --env-file=../.env src/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "fluent-ffmpeg": "^2.1.3",
+    "multer": "^1.4.5-lts.1",
+    "openai": "^4.83.0",
+    "uuid": "^11.1.0"
+  }
+}
