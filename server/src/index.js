@@ -12,6 +12,7 @@ try {
 import express from 'express'
 import cors from 'cors'
 import jobsRouter from './routes/jobs.js'
+import settingsRouter from './routes/settings.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -20,6 +21,7 @@ app.use(cors())
 app.use(express.json())
 
 app.use('/api', jobsRouter)
+app.use('/api', settingsRouter)
 
 const distPath = path.join(ROOT_DIR, 'client/dist')
 if (fs.existsSync(distPath)) {
@@ -37,7 +39,7 @@ if (!fs.existsSync(uploadsDir)) {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
 
-  if (!process.env.OPENAI_API_KEY) {
-    console.warn('WARNING: OPENAI_API_KEY not set in .env file')
+  if (!process.env.OPENAI_API_KEY || !process.env.OPENAI_API_KEY.startsWith('sk-')) {
+    console.warn('WARNING: OPENAI_API_KEY not configured. Open settings to add your API key.')
   }
 })

@@ -1,6 +1,9 @@
 import ffmpeg from 'fluent-ffmpeg'
 import { execSync } from 'node:child_process'
 
+if (process.env.FFMPEG_PATH) ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH)
+if (process.env.FFPROBE_PATH) ffmpeg.setFfprobePath(process.env.FFPROBE_PATH)
+
 export function getAudioDurationSeconds(filepath) {
   try {
     const stdout = execSync(

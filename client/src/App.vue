@@ -1,18 +1,30 @@
 <script setup>
-import { ref, computed, nextTick } from 'vue'
-import { uploadVideo, getJob } from './api.js'
+import { ref, computed } from 'vue'
+import { uploadVideo } from './api.js'
+import { useJobPolling } from './composables/useJobPolling.js'
 import UploadPanel from './components/UploadPanel.vue'
 import ProgressTracker from './components/ProgressTracker.vue'
 import TranscriptView from './components/TranscriptView.vue'
 import SummaryView from './components/SummaryView.vue'
 import MindMap from './components/MindMap.vue'
 import JobHistory from './components/JobHistory.vue'
+import SettingsModal from './components/SettingsModal.vue'
+
+const {
+  job,
+  jobId,
+  isProcessing,
+  isDone,
+  isError,
+  start: startPolling,
+  loadComplete,
+  reset: resetPolling,
+} = useJobPolling()
 
 const screen = ref('upload')
-const jobId = ref(null)
-const job = ref(null)
 const errorMsg = ref('')
 const selectedModel = ref('gpt-4o-mini')
+const showSettings = ref(false)
 const transcribeOnly = ref(false)
 const historyKey = ref(0)
 
@@ -27,65 +39,23 @@ const tabs = computed(() => {
 })
 const activeTab = ref('transcript')
 
-let pollTimer = null
-
-const isProcessing = ref(false)
-const isDone = ref(false)
-const isError = ref(false)
-
 async function onFileSelected(file) {
   errorMsg.value = ''
   try {
     const { jobId: id } = await uploadVideo(file, selectedModel.value, transcribeOnly.value)
-    jobId.value = id
     screen.value = 'results'
-    isProcessing.value = true
-    isDone.value = false
-    isError.value = false
-    startPolling()
+    startPolling(id)
   } catch (err) {
     errorMsg.value = err.message
   }
 }
 
-function startPolling() {
-  pollTimer = setInterval(async () => {
-    try {
-      const data = await getJob(jobId.value)
-      job.value = data
-      isProcessing.value = data.status !== 'done' && data.status !== 'error'
-      isDone.value = data.status === 'done'
-      isError.value = data.status === 'error'
-
-      if (data.status === 'done' || data.status === 'error') {
-        clearInterval(pollTimer)
-        pollTimer = null
-        historyKey.value++
-      }
-    } catch {
-      errorMsg.value = 'Error al obtener el estado'
-      clearInterval(pollTimer)
-    }
-  }, 2500)
-}
-
 async function loadHistoryJob(id) {
-  clearInterval(pollTimer)
-  pollTimer = null
   errorMsg.value = ''
-
-  try {
-    const data = await getJob(id)
-    jobId.value = id
-    job.value = data
-    screen.value = 'results'
-    isProcessing.value = false
-    isDone.value = data.status === 'done'
-    isError.value = data.status === 'error'
-    activeTab.value = 'transcript'
-  } catch (err) {
-    errorMsg.value = 'No se pudo cargar la transcripcion'
-  }
+  screen.value = 'results'
+  activeTab.value = 'transcript'
+  await loadComplete(id)
+  historyKey.value++
 }
 
 async function deleteJob(id) {
@@ -97,16 +67,10 @@ async function deleteJob(id) {
 }
 
 function reset() {
-  clearInterval(pollTimer)
-  pollTimer = null
-  jobId.value = null
-  job.value = null
+  resetPolling()
   screen.value = 'upload'
   activeTab.value = 'transcript'
   errorMsg.value = ''
-  isProcessing.value = false
-  isDone.value = false
-  isError.value = false
   transcribeOnly.value = false
 }
 </script>
@@ -115,6 +79,12 @@ function reset() {
   <div class="app">
     <header class="app-header">
       <h1 @click="reset" class="logo">Transcribe<span class="accent">Videos</span></h1>
+      <button class="settings-btn" @click="showSettings = true" title="Configuracion">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
     </header>
 
     <main class="app-main">
@@ -170,6 +140,8 @@ function reset() {
         </div>
       </div>
     </main>
+
+    <SettingsModal v-if="showSettings" @close="showSettings = false" />
   </div>
 </template>
 
@@ -185,6 +157,27 @@ function reset() {
 .app-header {
   padding: 16px 32px;
   border-bottom: 1px solid #21262d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-btn {
+  background: none;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  color: #484f58;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s;
+}
+
+.settings-btn:hover {
+  color: #c9d1d9;
+  border-color: #30363d;
+  background: #21262d;
 }
 
 .logo {
