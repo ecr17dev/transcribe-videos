@@ -20,48 +20,8 @@ A fullstack app (Node.js + Vue 3) that extracts audio from videos, transcribes t
 
 ## Screenshots
 
-```
-┌─────────────────────────────────────────────────────┐
-│  [Upload]  Drag & drop a video file here            │
-│                                                     │
-│  Model: ○ GPT-4o Mini (recommended)  ○ GPT-4o       │
-│  □ Transcribe only (no summary)                     │
-│                                                     │
-│  ─── History ─────────────────────────────────────  │
-│  📹 meeting-01.mp4    Completado  $0.74  Hace 2h    │
-│  📹 conference.mp4    Completado  $1.23  Ayer       │
-└─────────────────────────────────────────────────────┘
+<img width="100%" alt="image" src="https://github.com/user-attachments/assets/487fc2b6-0050-4e18-b279-27f60020a9fc" />
 
-┌─────────────────────────────────────────────────────┐
-│  ← New Video    meeting-01.mp4        00:03:42      │
-│  ████████████████░░░░░░░░░░░░  46%   [transcribing] │
-│                                                     │
-│  ① Extracting audio  ② Transcribing  ③ Summarizing │
-│                                                     │
-│  ✓ Analizando archivo de video...                   │
-│  ✓ Extrayendo pista de audio...                     │
-│  ✓ Codificando audio a formato óptimo...            │
-│  ✓ Audio extraído: 1h 23m de duración               │
-│  ● Transcribiendo fragmento 3 de 5...               │
-│  ○ Generando resumen ejecutivo...                   │
-│  ○ Construyendo mapa mental...                      │
-└─────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────┐
-│  [Transcripción]  [Resumen]  [Mapa Mental]          │
-│                                                     │
-│  ▸ Reducción del 30% en costes operativos           │
-│    Plan de entrada por México y Colombia con        │
-│    inversión inicial de $2M...                      │
-│    ├─ México como puerta de entrada                 │
-│    │  Mercado más maduro, 120M consumidores...      │
-│    ├─ Colombia como segundo mercado                 │
-│    │  Crecimiento del 8% anual en e-commerce...     │
-│    └─ ...                                           │
-│  ▸ Estrategia de expansión a LATAM                  │
-│  ▸ ...                                              │
-└─────────────────────────────────────────────────────┘
-```
 
 ## Architecture
 
