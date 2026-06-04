@@ -27,14 +27,15 @@ function resolvePath(relativePath) {
 
 function rebuildSqliteForElectron() {
   const serverDir = resolvePath('server')
+  const electronDir = path.resolve(__dirname, 'node_modules', 'electron')
   try {
-    execSync('npx -y electron-rebuild -f -w better-sqlite3', {
+    execSync(`npx -y electron-rebuild -f -w better-sqlite3 -e "${electronDir}"`, {
       cwd: serverDir,
       stdio: 'pipe',
       timeout: 60000,
     })
-  } catch {
-    console.warn('electron-rebuild skipped (binary may already be compatible)')
+  } catch (e) {
+    console.warn('electron-rebuild failed, trying fallback...', e.message?.slice(0, 80))
   }
 }
 
