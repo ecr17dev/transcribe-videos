@@ -40,7 +40,7 @@ function rebuildSqliteForElectron() {
 }
 
 async function startServer() {
-  rebuildSqliteForElectron()
+  if (isDev) rebuildSqliteForElectron()
 
   const settings = loadSettings()
 

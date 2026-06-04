@@ -10,9 +10,9 @@
     "test": "node scripts/test.js",
     "desktop:install": "cd desktop && npm install && npm run postinstall",
     "desktop:dev": "npm run build && cd desktop && npx electron .",
-    "desktop:build:mac": "npm run build && cd desktop && npx electron-builder --mac",
-    "desktop:build:win": "npm run build && cd desktop && npx electron-builder --win",
-    "desktop:build:all": "npm run build && cd desktop && npx electron-builder --mac --win"
+    "desktop:build:mac": "npm run build && cd server && npx -y electron-rebuild -f -w better-sqlite3 -e ../desktop/node_modules/electron && cd ../desktop && npx electron-builder --mac",
+    "desktop:build:win": "npm run build && cd server && npx -y electron-rebuild -f -w better-sqlite3 -e ../desktop/node_modules/electron && cd ../desktop && npx electron-builder --win",
+    "desktop:build:all": "npm run build && cd server && npx -y electron-rebuild -f -w better-sqlite3 -e ../desktop/node_modules/electron && cd ../desktop && npx electron-builder --mac --win"
   },
   "devDependencies": {
     "dotenv": "^16.4.7",
