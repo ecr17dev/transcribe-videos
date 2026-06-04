@@ -3,5 +3,7 @@ node_modules/
 server/uploads/
 server/data/
 client/dist/
+desktop/dist/
+desktop/node_modules/
 *.log
 .DS_Store
