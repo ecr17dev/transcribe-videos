@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
+import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -24,7 +25,22 @@ function resolvePath(relativePath) {
   return path.join(process.resourcesPath, relativePath)
 }
 
+function rebuildSqliteForElectron() {
+  const serverDir = resolvePath('server')
+  try {
+    execSync('npx -y electron-rebuild -f -w better-sqlite3', {
+      cwd: serverDir,
+      stdio: 'pipe',
+      timeout: 60000,
+    })
+  } catch {
+    console.warn('electron-rebuild skipped (binary may already be compatible)')
+  }
+}
+
 async function startServer() {
+  rebuildSqliteForElectron()
+
   const settings = loadSettings()
 
   const ffmpegPath = (await import('@ffmpeg-installer/ffmpeg')).default.path
