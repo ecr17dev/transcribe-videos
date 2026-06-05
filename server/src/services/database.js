@@ -32,21 +32,42 @@ db.exec(`
   )
 `)
 
+try { db.exec(`ALTER TABLE jobs ADD COLUMN stt_provider TEXT DEFAULT 'openai'`) } catch {}
+try { db.exec(`ALTER TABLE jobs ADD COLUMN stt_model TEXT DEFAULT 'whisper-1'`) } catch {}
+try { db.exec(`ALTER TABLE jobs ADD COLUMN detailed_summary TEXT`) } catch {}
+try { db.exec(`ALTER TABLE jobs ADD COLUMN infographic TEXT`) } catch {}
+try { db.exec(`ALTER TABLE jobs ADD COLUMN infographic_data TEXT`) } catch {}
+
 db.exec(`
   CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at DESC)
 `)
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+  )
+`)
+
+export default db
+
 const insertStmt = db.prepare(`
-  INSERT INTO jobs (id, video_name, model, status, transcript, summary, mindmap, cost, error, created_at, updated_at)
-  VALUES (@id, @video_name, @model, @status, @transcript, @summary, @mindmap, @cost, @error, @created_at, @updated_at)
+  INSERT INTO jobs (id, video_name, model, status, stt_provider, stt_model, transcript, summary, mindmap, detailed_summary, infographic, infographic_data, cost, error, created_at, updated_at)
+  VALUES (@id, @video_name, @model, @status, @stt_provider, @stt_model, @transcript, @summary, @mindmap, @detailed_summary, @infographic, @infographic_data, @cost, @error, @created_at, @updated_at)
 `)
 
 const updateStmt = db.prepare(`
   UPDATE jobs SET
     status = @status,
+    stt_provider = @stt_provider,
+    stt_model = @stt_model,
     transcript = @transcript,
     summary = @summary,
     mindmap = @mindmap,
+    detailed_summary = @detailed_summary,
+    infographic = @infographic,
+    infographic_data = @infographic_data,
     cost = @cost,
     error = @error,
     updated_at = @updated_at
@@ -59,9 +80,14 @@ export function insertJob(job) {
     video_name: job.videoName,
     model: job.model || 'gpt-4o-mini',
     status: job.status,
+    stt_provider: job.sttProvider || 'openai',
+    stt_model: job.sttModel || 'whisper-1',
     transcript: job.transcript || null,
     summary: job.summary ? JSON.stringify(job.summary) : null,
     mindmap: job.mindmap ? JSON.stringify(job.mindmap) : null,
+    detailed_summary: job.detailedSummary ? JSON.stringify(job.detailedSummary) : null,
+    infographic: job.infographic || null,
+    infographic_data: job.infographicData ? JSON.stringify(job.infographicData) : null,
     cost: job.cost ? JSON.stringify(job.cost) : null,
     error: job.error || null,
     created_at: job.createdAt,
@@ -73,9 +99,14 @@ export function updateJob(job) {
   updateStmt.run({
     id: job.id,
     status: job.status,
+    stt_provider: job.sttProvider || 'openai',
+    stt_model: job.sttModel || 'whisper-1',
     transcript: job.transcript || null,
     summary: job.summary ? JSON.stringify(job.summary) : null,
     mindmap: job.mindmap ? JSON.stringify(job.mindmap) : null,
+    detailed_summary: job.detailedSummary ? JSON.stringify(job.detailedSummary) : null,
+    infographic: job.infographic || null,
+    infographic_data: job.infographicData ? JSON.stringify(job.infographicData) : null,
     cost: job.cost ? JSON.stringify(job.cost) : null,
     error: job.error || null,
     updated_at: Date.now(),
@@ -96,15 +127,29 @@ export function deleteJobById(id) {
   db.prepare('DELETE FROM jobs WHERE id = ?').run(id)
 }
 
+export function getJobsByMonth(year, month) {
+  const start = new Date(year, month - 1, 1).getTime()
+  const end = new Date(year, month, 0, 23, 59, 59, 999).getTime()
+  const rows = db.prepare(
+    'SELECT * FROM jobs WHERE status = ? AND created_at >= ? AND created_at <= ? ORDER BY created_at ASC'
+  ).all('done', start, end)
+  return rows.map(rowToJob)
+}
+
 function rowToJob(row) {
   return {
     id: row.id,
     videoName: row.video_name,
     model: row.model,
     status: row.status,
+    sttProvider: row.stt_provider || 'openai',
+    sttModel: row.stt_model || 'whisper-1',
     transcript: row.transcript || null,
     summary: tryParse(row.summary),
     mindmap: tryParse(row.mindmap),
+    detailedSummary: tryParse(row.detailed_summary),
+    infographic: row.infographic || null,
+    infographicData: tryParse(row.infographic_data),
     cost: tryParse(row.cost),
     error: row.error || null,
     createdAt: row.created_at,
