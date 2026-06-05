@@ -12,6 +12,8 @@ asarUnpack:
   - "**/*.node"
   - "**/better-sqlite3/**"
   - "**/node_modules/better-sqlite3/**"
+  - "**/@ffmpeg-installer/**"
+  - "**/@ffprobe-installer/**"
 
 extraResources:
   - from: "../server"

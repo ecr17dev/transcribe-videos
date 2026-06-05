@@ -8,6 +8,7 @@
     "start": "npm run build && npm start --prefix server",
     "dev": "npx -y concurrently -n server,client -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "test": "node scripts/test.js",
+    "test:media-binaries": "node --test server/src/services/media-binaries.test.js",
     "desktop:install": "cd desktop && npm install && npm run postinstall",
     "desktop:dev": "npm run build && cd desktop && npx electron .",
     "desktop:build:mac": "npm run build && cd server && npx -y electron-rebuild -f -w better-sqlite3 -e ../desktop/node_modules/electron && cd ../desktop && npx electron-builder --mac",

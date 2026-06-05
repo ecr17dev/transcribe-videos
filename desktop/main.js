@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { execSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isDev = !app.isPackaged
@@ -44,22 +44,34 @@ async function startServer() {
 
   const settings = loadSettings()
 
-  const ffmpegPath = (await import('@ffmpeg-installer/ffmpeg')).default.path
-  const ffprobePath = (await import('@ffprobe-installer/ffprobe')).default.path
+  // Load all provider API keys from settings
+  if (settings.provider_openai) {
+    try {
+      const c = JSON.parse(settings.provider_openai)
+      process.env.OPENAI_API_KEY = c.apiKey || ''
+    } catch {}
+  } else if (settings.openaiApiKey) {
+    process.env.OPENAI_API_KEY = settings.openaiApiKey
+  }
 
-  process.env.FFMPEG_PATH = ffmpegPath
-  process.env.FFPROBE_PATH = ffprobePath
-  process.env.OPENAI_API_KEY = settings.openaiApiKey || ''
   process.env.SETTINGS_PATH = SETTINGS_PATH
   process.env.PORT = process.env.PORT || '3001'
   process.env.ELECTRON_RUN = '1'
 
-  const serverEntry = resolvePath('server/src/index.js')
   const serverRoot = resolvePath('server')
+  const serverEntry = path.join(serverRoot, 'src/index.js')
+  const mediaBinariesEntry = path.join(serverRoot, 'src/services/media-binaries.js')
   process.chdir(serverRoot)
 
   try {
-    await import(serverEntry)
+    const { resolveMediaBinaries } = await import(pathToFileURL(mediaBinariesEntry).href)
+    const media = resolveMediaBinaries({ forceRefresh: true })
+
+    process.env.FFMPEG_PATH = media.ffmpegPath
+    process.env.FFPROBE_PATH = media.ffprobePath
+
+    console.log(`Media binaries ready (${media.source}): ffmpeg=${media.ffmpegPath} ffprobe=${media.ffprobePath}`)
+    await import(pathToFileURL(serverEntry).href)
     console.log('Server started on port', process.env.PORT)
   } catch (err) {
     console.error('Failed to start server:', err)
