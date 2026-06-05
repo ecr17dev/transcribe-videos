@@ -9,8 +9,13 @@
     "postinstall": "npm rebuild better-sqlite3 || true"
   },
   "dependencies": {
+    "@deepgram/sdk": "^5.4.0",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
+    "@google-cloud/speech": "^7.3.2",
     "better-sqlite3": "^12.10.0",
     "cors": "^2.8.5",
+    "docx": "^9.7.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "fluent-ffmpeg": "^2.1.3",

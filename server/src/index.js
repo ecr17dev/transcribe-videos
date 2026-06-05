@@ -13,9 +13,10 @@ import express from 'express'
 import cors from 'cors'
 import jobsRouter from './routes/jobs.js'
 import settingsRouter from './routes/settings.js'
+import { assertMediaBinariesAvailable } from './services/media-binaries.js'
 
 const app = express()
-const PORT = process.env.PORT || 3001
+const desiredPort = parseInt(process.env.PORT || '3001', 10)
 
 app.use(cors())
 app.use(express.json())
@@ -36,10 +37,39 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true })
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
+try {
+  const media = assertMediaBinariesAvailable()
+  console.log(`Media binaries ready (${media.source}): ffmpeg=${media.ffmpegPath} ffprobe=${media.ffprobePath}`)
+} catch (error) {
+  console.error('Media dependency check failed.')
+  console.error(error.message)
+  process.exit(1)
+}
 
-  if (!process.env.OPENAI_API_KEY || !process.env.OPENAI_API_KEY.startsWith('sk-')) {
-    console.warn('WARNING: OPENAI_API_KEY not configured. Open settings to add your API key.')
-  }
+async function startServer(port, retries = 20) {
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, () => {
+      const actualPort = server.address().port
+      console.log(`Server running on http://localhost:${actualPort}`)
+
+      if (!process.env.OPENAI_API_KEY || !process.env.OPENAI_API_KEY.startsWith('sk-')) {
+        console.warn('WARNING: OPENAI_API_KEY not configured. Open settings to add your API key.')
+      }
+      resolve(actualPort)
+    })
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE' && retries > 0) {
+        server.close()
+        startServer(port + 1, retries - 1).then(resolve).catch(reject)
+      } else {
+        reject(err)
+      }
+    })
+  })
+}
+
+startServer(desiredPort).catch((err) => {
+  console.error('Failed to start server:', err.message)
+  process.exit(1)
 })
