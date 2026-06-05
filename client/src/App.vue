@@ -1,12 +1,19 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import {
+  IconFileText,
+  IconSparkles,
+  IconLayoutDashboard,
+  IconPlayerTrackNext,
+  IconSettings,
+} from '@tabler/icons-vue'
 import { uploadVideo } from './api.js'
 import { useJobPolling } from './composables/useJobPolling.js'
 import UploadPanel from './components/UploadPanel.vue'
 import ProgressTracker from './components/ProgressTracker.vue'
 import TranscriptView from './components/TranscriptView.vue'
 import SummaryView from './components/SummaryView.vue'
-import MindMap from './components/MindMap.vue'
+import InfographicView from './components/InfographicView.vue'
 import JobHistory from './components/JobHistory.vue'
 import SettingsModal from './components/SettingsModal.vue'
 
@@ -15,7 +22,6 @@ const {
   jobId,
   isProcessing,
   isDone,
-  isError,
   start: startPolling,
   loadComplete,
   reset: resetPolling,
@@ -27,22 +33,61 @@ const selectedModel = ref('gpt-4o-mini')
 const showSettings = ref(false)
 const transcribeOnly = ref(false)
 const historyKey = ref(0)
+const sttProvider = ref('openai')
+const sttModel = ref('whisper-1')
+const activeTab = ref('transcript')
 
 const tabs = computed(() => {
   if (!job.value) return []
-  const list = [{ key: 'transcript', label: 'Transcripcion' }]
-  if (job.value.summary || job.value.mindmap) {
-    list.push({ key: 'summary', label: 'Resumen' })
-    list.push({ key: 'mindmap', label: 'Mapa Mental' })
+
+  const list = [
+    { key: 'transcript', label: 'Transcripcion', icon: IconFileText },
+  ]
+
+  if (job.value.summary) {
+    list.push({ key: 'summary', label: 'Resumen', icon: IconSparkles })
   }
+
+  if (job.value.infographicData || job.value.infographic || job.value.summary) {
+    list.push({ key: 'infographic', label: 'Infografia', icon: IconLayoutDashboard })
+  }
+
   return list
 })
-const activeTab = ref('transcript')
+
+watch(
+  () => job.value,
+  (currentJob) => {
+    if (!currentJob) return
+
+    const preferredTab = currentJob.infographicData || currentJob.infographic
+      ? 'infographic'
+      : currentJob.summary
+        ? 'summary'
+        : 'transcript'
+
+    if (!tabs.value.some((tab) => tab.key === activeTab.value)) {
+      activeTab.value = preferredTab
+      return
+    }
+
+    if (currentJob.status === 'done' && activeTab.value === 'transcript' && preferredTab !== 'transcript') {
+      activeTab.value = preferredTab
+    }
+  },
+  { immediate: true }
+)
 
 async function onFileSelected(file) {
   errorMsg.value = ''
   try {
-    const { jobId: id } = await uploadVideo(file, selectedModel.value, transcribeOnly.value)
+    const { jobId: id } = await uploadVideo(
+      file,
+      selectedModel.value,
+      transcribeOnly.value,
+      sttProvider.value,
+      sttModel.value,
+    )
     screen.value = 'results'
     startPolling(id)
   } catch (err) {
@@ -73,6 +118,10 @@ function reset() {
   errorMsg.value = ''
   transcribeOnly.value = false
 }
+
+function onProvidersChanged() {
+  historyKey.value++
+}
 </script>
 
 <template>
@@ -80,10 +129,7 @@ function reset() {
     <header class="app-header">
       <img src="/logo.png" alt="TranscribeVideos" class="logo-img" @click="reset" />
       <button class="settings-btn" @click="showSettings = true" title="Configuracion">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
+        <IconSettings :size="20" :stroke="1.8" />
       </button>
     </header>
 
@@ -92,9 +138,13 @@ function reset() {
         <UploadPanel
           :model="selectedModel"
           :transcribeOnly="transcribeOnly"
+          :sttProvider="sttProvider"
+          :sttModel="sttModel"
           @file="onFileSelected"
           @update:model="selectedModel = $event"
           @update:transcribeOnly="transcribeOnly = $event"
+          @update:sttProvider="sttProvider = $event"
+          @update:sttModel="sttModel = $event"
           @error="errorMsg = $event"
         />
         <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
@@ -107,7 +157,10 @@ function reset() {
 
       <div v-else class="screen results-screen">
         <div class="results-header">
-          <button @click="reset" class="btn-back">Nuevo video</button>
+          <button @click="reset" class="btn-back">
+            <IconPlayerTrackNext :size="16" />
+            <span>Nuevo video</span>
+          </button>
           <h2 class="video-name">{{ job?.videoName || 'Procesando...' }}</h2>
         </div>
 
@@ -123,25 +176,32 @@ function reset() {
               :class="['tab-btn', { active: activeTab === tab.key }]"
               @click="activeTab = tab.key"
             >
-              {{ tab.label }}
+              <component :is="tab.icon" :size="16" :stroke="1.8" />
+              <span>{{ tab.label }}</span>
             </button>
           </nav>
 
           <TranscriptView v-if="activeTab === 'transcript'" :text="job.transcript" />
-          <SummaryView v-else-if="activeTab === 'summary'" :summary="job.summary" />
-          <MindMap v-else :data="job.mindmap" />
+          <SummaryView v-else-if="activeTab === 'summary'" :summary="job.summary" :job-id="job.id" />
+          <InfographicView v-else-if="activeTab === 'infographic'" :html="job.infographic" :summary="job.summary" :infographic-data="job.infographicData" />
 
           <div v-if="job.cost" class="cost-bar">
             <span>Coste estimado: <strong>${{ job.cost.total }}</strong></span>
             <span class="cost-detail">
-              Whisper: ${{ job.cost.whisper }} | {{ job.model }}: ${{ (job.cost.total - job.cost.whisper).toFixed(4) }}
+              STT ({{ job.cost.sttProvider || 'openai' }}): ${{ job.cost.stt }}
+              | {{ job.model }}: ${{ (job.cost.total - job.cost.stt).toFixed(4) }}
+              <template v-if="job.cost.twoPass"> | 2-pass</template>
             </span>
           </div>
         </div>
       </div>
     </main>
 
-    <SettingsModal v-if="showSettings" @close="showSettings = false" />
+    <SettingsModal
+      v-if="showSettings"
+      @close="showSettings = false"
+      @providers-changed="onProvidersChanged"
+    />
   </div>
 </template>
 
@@ -150,7 +210,10 @@ function reset() {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #0f1117;
+  background:
+    radial-gradient(circle at top left, rgba(17, 88, 194, 0.18), transparent 24%),
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 18%),
+    linear-gradient(180deg, #0a0d12 0%, #0f1117 30%, #11151c 100%);
   color: #e1e4e8;
 }
 
@@ -163,31 +226,30 @@ function reset() {
 }
 
 .settings-btn {
-  background: none;
-  border: 1px solid #21262d;
-  border-radius: 8px;
-  color: #484f58;
+  background: rgba(17, 22, 32, 0.82);
+  border: 1px solid #243043;
+  border-radius: 12px;
+  color: #7c8798;
   cursor: pointer;
-  padding: 8px;
+  padding: 10px;
   display: flex;
   align-items: center;
-  transition: all 0.15s;
+  justify-content: center;
+  backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
 }
 
 .settings-btn:hover {
-  color: #c9d1d9;
-  border-color: #30363d;
-  background: #21262d;
+  color: #f5f7fb;
+  border-color: #3677d6;
+  background: rgba(22, 31, 45, 0.92);
+  transform: translateY(-1px);
 }
 
 .logo-img {
   height: 32px;
   cursor: pointer;
   user-select: none;
-}
-
-.logo .accent {
-  color: #58a6ff;
 }
 
 .app-main {
@@ -215,18 +277,22 @@ function reset() {
 }
 
 .btn-back {
-  padding: 8px 16px;
-  background: #21262d;
-  border: 1px solid #30363d;
-  color: #c9d1d9;
-  border-radius: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, rgba(26, 35, 50, 0.94), rgba(15, 20, 28, 0.96));
+  border: 1px solid #28415f;
+  color: #dce7fb;
+  border-radius: 999px;
   cursor: pointer;
   font-size: 0.875rem;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
 }
 
 .btn-back:hover {
-  background: #30363d;
+  background: linear-gradient(180deg, rgba(33, 48, 71, 0.98), rgba(16, 23, 34, 0.98));
 }
 
 .video-name {
@@ -237,37 +303,45 @@ function reset() {
 }
 
 .results-content {
-  background: #161b22;
-  border: 1px solid #21262d;
-  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(18, 24, 33, 0.98), rgba(15, 20, 28, 0.98));
+  border: 1px solid #212a38;
+  border-radius: 18px;
   overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
 }
 
 .tabs {
   display: flex;
-  border-bottom: 1px solid #21262d;
-  background: #0d1117;
+  border-bottom: 1px solid #212a38;
+  background: rgba(9, 13, 20, 0.88);
+  padding: 6px;
+  gap: 6px;
 }
 
 .tab-btn {
-  padding: 12px 20px;
-  background: none;
+  padding: 12px 16px;
+  background: transparent;
   border: none;
   color: #8b949e;
   font-size: 0.875rem;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.15s;
+  border-radius: 12px;
+  transition: all 0.18s ease;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .tab-btn:hover {
-  color: #c9d1d9;
+  color: #d8e4fb;
+  background: rgba(34, 44, 60, 0.72);
 }
 
 .tab-btn.active {
-  color: #58a6ff;
-  border-bottom-color: #58a6ff;
+  color: #f8fbff;
+  background: linear-gradient(180deg, rgba(36, 71, 122, 0.72), rgba(25, 39, 62, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(99, 169, 255, 0.3);
 }
 
 .error-msg {
@@ -282,8 +356,8 @@ function reset() {
 
 .cost-bar {
   padding: 12px 20px;
-  background: #0d1117;
-  border-top: 1px solid #21262d;
+  background: rgba(7, 10, 16, 0.8);
+  border-top: 1px solid #212a38;
   font-size: 0.8125rem;
   color: #8b949e;
   display: flex;
@@ -296,6 +370,31 @@ function reset() {
 }
 
 .cost-detail {
-  color: #484f58;
+  color: #667385;
+}
+
+@media (max-width: 720px) {
+  .app-header {
+    padding: 16px 18px;
+  }
+
+  .app-main {
+    padding: 20px 14px;
+  }
+
+  .results-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tabs {
+    overflow-x: auto;
+  }
+
+  .cost-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 </style>
