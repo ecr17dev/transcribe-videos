@@ -1,13 +1,17 @@
 import ffmpeg from 'fluent-ffmpeg'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
+import { resolveMediaBinaries } from './media-binaries.js'
 
-if (process.env.FFMPEG_PATH) ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH)
-if (process.env.FFPROBE_PATH) ffmpeg.setFfprobePath(process.env.FFPROBE_PATH)
+const { ffmpegPath: FFMPEG_BIN, ffprobePath: FFPROBE_BIN } = resolveMediaBinaries()
+
+ffmpeg.setFfmpegPath(FFMPEG_BIN)
+ffmpeg.setFfprobePath(FFPROBE_BIN)
 
 export function getAudioDurationSeconds(filepath) {
   try {
-    const stdout = execSync(
-      `ffprobe -v error -show_entries format=duration -of csv=p=0 "${filepath}"`,
+    const stdout = execFileSync(
+      FFPROBE_BIN,
+      ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', filepath],
       { encoding: 'utf8', timeout: 15000 }
     )
     return parseFloat(stdout.trim()) || 0
