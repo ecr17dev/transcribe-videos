@@ -1,9 +1,25 @@
 <script setup>
 import { ref } from 'vue'
+import {
+  IconCloudUpload,
+  IconBolt,
+  IconSparkles,
+  IconPlayerSkipForward,
+} from '@tabler/icons-vue'
+import ProviderSelector from './ProviderSelector.vue'
 
-const WHISPER_COST = 0.006
-const props = defineProps({ model: String, transcribeOnly: Boolean })
-const emit = defineEmits(['file', 'update:model', 'update:transcribeOnly', 'error'])
+const props = defineProps({
+  model: String,
+  transcribeOnly: Boolean,
+  sttProvider: String,
+  sttModel: String,
+})
+
+const emit = defineEmits([
+  'file', 'error',
+  'update:model', 'update:transcribeOnly',
+  'update:sttProvider', 'update:sttModel',
+])
 
 const dragging = ref(false)
 const fileInput = ref(null)
@@ -30,9 +46,9 @@ function onFileChange(e) {
 }
 
 function handleFile(file) {
-  const validTypes = /\.(mp4|mov|avi|mkv|webm|flv|wmv|m4v|3gp)$/i
+  const validTypes = /\.(mp4|mov|avi|mkv|webm|flv|wmv|m4v|3gp|mp3|wav|m4a|ogg|flac|opus|aac|wma)$/i
   if (!validTypes.test(file.name)) {
-    emit('error', 'Formato no soportado. Usa MP4, MOV, AVI, MKV, etc.')
+    emit('error', 'Formato no soportado. Usa video (MP4, MOV) o audio (MP3, WAV, M4A, etc.)')
     return
   }
   if (file.size > 5 * 1024 * 1024 * 1024) {
@@ -42,24 +58,13 @@ function handleFile(file) {
   emit('error', '')
   emit('file', file)
 }
-
-function formatSize(bytes) {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
-}
-
-function estimatedCost(fileSizeBytes) {
-  const estDurationMin = (fileSizeBytes / (1024 * 1024 * 10)) * 2
-  return Math.max((estDurationMin * WHISPER_COST), 0.01).toFixed(2)
-}
 </script>
 
 <template>
   <div class="upload-container">
     <div class="upload-header">
-      <h2>Sube un video para transcribir</h2>
-      <p class="subtitle">Soporta MP4, MOV, AVI, MKV, WebM y mas. Maximo 5GB.</p>
+      <h2>Sube un video o audio para transcribir</h2>
+      <p class="subtitle">Genera una transcripcion clara, un resumen util y una infografia visual lista para presentar.</p>
     </div>
 
     <div
@@ -72,23 +77,26 @@ function estimatedCost(fileSizeBytes) {
       <input
         ref="fileInput"
         type="file"
-        accept="video/*"
+        accept="video/*,audio/*"
         class="file-input"
         @change="onFileChange"
       />
       <div class="dropzone-content">
-        <svg class="drop-icon" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/>
-          <line x1="12" y1="3" x2="12" y2="15"/>
-        </svg>
-        <p class="drop-text">Arrastra un video aqui o haz clic para seleccionar</p>
-        <p class="drop-hint">El archivo se procesa localmente en tu servidor</p>
+        <IconCloudUpload class="drop-icon" :size="50" :stroke="1.5" />
+        <p class="drop-text">Arrastra un archivo aqui o haz clic para seleccionar</p>
+        <p class="drop-hint">Soporta video y audio hasta 5 GB. El procesamiento queda en tu instancia.</p>
       </div>
     </div>
 
+    <ProviderSelector
+      :provider="props.sttProvider"
+      :model="props.sttModel"
+      @update:provider="emit('update:sttProvider', $event)"
+      @update:model="emit('update:sttModel', $event)"
+    />
+
     <div class="model-selector">
-      <label class="model-label">Modelo para el resumen:</label>
+      <label class="model-label">Modelo para analisis e infografia:</label>
       <div class="model-options">
         <label class="model-option" :class="{ selected: props.model === 'gpt-4o-mini' }">
           <input
@@ -98,8 +106,8 @@ function estimatedCost(fileSizeBytes) {
             @change="$emit('update:model', 'gpt-4o-mini')"
           />
           <div class="model-info">
-            <span class="model-name">GPT-4o Mini</span>
-            <span class="model-desc">Economico y rapido (recomendado)</span>
+            <span class="model-name"><IconBolt :size="15" /> GPT-4o Mini</span>
+            <span class="model-desc">Mas rapido y economico para iterar.</span>
           </div>
         </label>
         <label class="model-option" :class="{ selected: props.model === 'gpt-4o' }">
@@ -110,8 +118,8 @@ function estimatedCost(fileSizeBytes) {
             @change="$emit('update:model', 'gpt-4o')"
           />
           <div class="model-info">
-            <span class="model-name">GPT-4o</span>
-            <span class="model-desc">Mayor calidad, mas costoso</span>
+            <span class="model-name"><IconSparkles :size="15" /> GPT-4o</span>
+            <span class="model-desc">Mayor calidad para piezas visuales mas finas.</span>
           </div>
         </label>
       </div>
@@ -123,15 +131,15 @@ function estimatedCost(fileSizeBytes) {
         :checked="props.transcribeOnly"
         @change="$emit('update:transcribeOnly', $event.target.checked)"
       />
-      <span class="toggle-label">Solo transcribir</span>
-      <span class="toggle-desc">Sin resumen ni mapa mental (mas rapido, solo ~$0.36/h)</span>
+      <span class="toggle-label"><IconPlayerSkipForward :size="15" /> Solo transcribir</span>
+      <span class="toggle-desc">Sin resumen ni infografia</span>
     </label>
   </div>
 </template>
 
 <style scoped>
 .upload-container {
-  max-width: 600px;
+  max-width: 640px;
   margin: 0 auto;
 }
 
@@ -141,31 +149,37 @@ function estimatedCost(fileSizeBytes) {
 }
 
 .upload-header h2 {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   font-weight: 600;
-  margin: 0 0 8px;
+  margin: 0 0 10px;
 }
 
 .subtitle {
   color: #8b949e;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   margin: 0;
+  line-height: 1.6;
 }
 
 .dropzone {
-  border: 2px dashed #30363d;
-  border-radius: 12px;
-  padding: 48px 24px;
+  border: 2px dashed #2e3f58;
+  border-radius: 20px;
+  padding: 56px 24px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s;
-  background: #161b22;
+  transition: all 0.2s ease;
+  background:
+    radial-gradient(circle at top, rgba(48, 124, 231, 0.16), transparent 30%),
+    linear-gradient(180deg, rgba(19, 27, 39, 0.96), rgba(14, 20, 29, 0.98));
 }
 
 .dropzone:hover,
 .dropzone.dragging {
   border-color: #58a6ff;
-  background: #1a2332;
+  background:
+    radial-gradient(circle at top, rgba(67, 142, 248, 0.22), transparent 30%),
+    linear-gradient(180deg, rgba(24, 34, 49, 0.98), rgba(16, 24, 35, 0.98));
+  transform: translateY(-1px);
 }
 
 .file-input {
@@ -173,29 +187,24 @@ function estimatedCost(fileSizeBytes) {
 }
 
 .drop-icon {
-  color: #484f58;
+  color: #7ca9df;
   margin-bottom: 16px;
-}
-
-.dropzone:hover .drop-icon,
-.dropzone.dragging .drop-icon {
-  color: #58a6ff;
 }
 
 .drop-text {
   font-size: 1rem;
-  color: #c9d1d9;
-  margin: 0 0 6px;
+  color: #e6edf8;
+  margin: 0 0 8px;
 }
 
 .drop-hint {
-  font-size: 0.8125rem;
-  color: #484f58;
+  font-size: 0.84rem;
+  color: #92a2b6;
   margin: 0;
 }
 
 .model-selector {
-  margin-top: 32px;
+  margin-top: 24px;
 }
 
 .model-label {
@@ -216,18 +225,18 @@ function estimatedCost(fileSizeBytes) {
   padding: 14px 16px;
   background: #161b22;
   border: 1px solid #21262d;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .model-option:hover {
-  border-color: #30363d;
+  border-color: #35537d;
 }
 
 .model-option.selected {
   border-color: #58a6ff;
-  background: #1a2332;
+  background: #18273a;
 }
 
 .model-option input {
@@ -235,14 +244,17 @@ function estimatedCost(fileSizeBytes) {
 }
 
 .model-name {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 600;
   font-size: 0.9rem;
   color: #c9d1d9;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .model-desc {
+  display: block;
   font-size: 0.75rem;
   color: #8b949e;
 }
@@ -254,14 +266,14 @@ function estimatedCost(fileSizeBytes) {
   padding: 12px 16px;
   background: #161b22;
   border: 1px solid #21262d;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: border-color 0.15s;
   margin-top: 16px;
 }
 
 .transcribe-only-toggle:hover {
-  border-color: #30363d;
+  border-color: #35537d;
 }
 
 .transcribe-only-toggle input[type="checkbox"] {
@@ -275,11 +287,29 @@ function estimatedCost(fileSizeBytes) {
   font-size: 0.875rem;
   font-weight: 600;
   color: #c9d1d9;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .toggle-desc {
   font-size: 0.75rem;
-  color: #484f58;
+  color: #7b8798;
   margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .model-options {
+    flex-direction: column;
+  }
+
+  .transcribe-only-toggle {
+    flex-wrap: wrap;
+  }
+
+  .toggle-desc {
+    margin-left: 0;
+    width: 100%;
+  }
 }
 </style>

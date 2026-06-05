@@ -1,14 +1,21 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import {
+  IconWaveSine,
+  IconFileAnalytics,
+  IconLayoutDashboard,
+  IconCheck,
+  IconLoader2,
+} from '@tabler/icons-vue'
 
 const props = defineProps({ job: Object })
 const elapsed = ref('00:00')
 let timer = null
 
 const steps = [
-  { num: 1, label: 'Extrayendo audio', icon: 'audio' },
-  { num: 2, label: 'Transcribiendo', icon: 'transcribe' },
-  { num: 3, label: 'Resumen y mapa', icon: 'summary' },
+  { num: 1, label: 'Extrayendo audio', icon: IconWaveSine },
+  { num: 2, label: 'Transcribiendo', icon: IconFileAnalytics },
+  { num: 3, label: 'Resumen e infografia', icon: IconLayoutDashboard },
 ]
 
 function startTimer() {
@@ -69,9 +76,9 @@ const showShimmer = computed(() => {
         }]"
       >
         <span class="step-num">
-          <span v-if="job.step > step.num">&#10003;</span>
-          <span v-else-if="job.step === step.num" class="spinner"></span>
-          <span v-else>{{ step.num }}</span>
+          <IconCheck v-if="job.step > step.num" :size="14" :stroke="2.4" />
+          <IconLoader2 v-else-if="job.step === step.num" :size="14" :stroke="2.2" class="spinner-icon" />
+          <component :is="step.icon" v-else :size="14" :stroke="2" />
         </span>
         <span class="step-label">{{ step.label }}</span>
       </div>
@@ -86,7 +93,7 @@ const showShimmer = computed(() => {
         :class="['substep', { done: sub.done }]"
       >
         <span class="substep-marker">
-          <span v-if="sub.done">&#10003;</span>
+          <IconCheck v-if="sub.done" :size="11" :stroke="2.8" />
           <span v-else class="substep-dot"></span>
         </span>
         <span class="substep-text">{{ sub.text }}</span>
@@ -218,12 +225,9 @@ const showShimmer = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
   background: #21262d;
-  color: #8b949e;
+  color: #9db4d4;
   flex-shrink: 0;
-  line-height: 1;
 }
 
 .step-card.current .step-num {
@@ -236,17 +240,12 @@ const showShimmer = computed(() => {
   color: #fff;
 }
 
-.spinner {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border: 2px solid #fff;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+.spinner-icon {
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
+  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
@@ -297,7 +296,6 @@ const showShimmer = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.625rem;
   border-radius: 50%;
   margin-top: 1px;
 }
