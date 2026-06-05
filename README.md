@@ -22,6 +22,16 @@ Designed to be **cost-efficient** (~$0.02 for a 2-hour video with GPT-4o-mini su
 
 ---
 
+## Demo
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=t7agGJNNN_c" target="_blank" rel="noopener">
+    <img src="https://img.youtube.com/vi/t7agGJNNN_c/maxresdefault.jpg" alt="TranscribeVideos Demo" width="720" style="max-width:100%; border-radius:12px;" />
+  </a>
+</p>
+
+---
+
 ## Features
 
 ### Transcription
