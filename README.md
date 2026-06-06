@@ -297,14 +297,14 @@ npm test
 
 # 5. Start the app (builds client + starts server)
 npm start
-# Open http://localhost:3001
+# Open http://localhost:6969
 ```
 
 ### Development Mode
 
 ```bash
 npm run dev
-# Backend:  http://localhost:3001 (with --watch, auto-reload)
+# Backend:  http://localhost:6969 (with --watch, auto-reload)
 # Frontend: http://localhost:5173 (Vite HMR, proxies /api to backend)
 ```
 
@@ -334,11 +334,11 @@ Edit `.env` to configure the server:
 # Required: OpenAI API key
 OPENAI_API_KEY=sk-your-key-here
 
-# Optional: Server port (default: 3001, falls back to next available if busy)
-PORT=3001
+# Optional: Server port (default: 6969, falls back to next available if busy)
+PORT=6969
 
 # Optional: Vite proxy target port for development
-SERVER_PORT=3001
+SERVER_PORT=6969
 ```
 
 Additional STT provider API keys and settings are configured via the in-app Settings panel (gear icon). These are persisted in the SQLite database and survive server restarts.

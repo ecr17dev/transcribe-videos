@@ -16,7 +16,7 @@ import settingsRouter from './routes/settings.js'
 import { assertMediaBinariesAvailable } from './services/media-binaries.js'
 
 const app = express()
-const desiredPort = parseInt(process.env.PORT || '3001', 10)
+const desiredPort = parseInt(process.env.PORT || '6969', 10)
 
 app.use(cors())
 app.use(express.json())

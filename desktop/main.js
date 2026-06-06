@@ -55,7 +55,7 @@ async function startServer() {
   }
 
   process.env.SETTINGS_PATH = SETTINGS_PATH
-  process.env.PORT = process.env.PORT || '3001'
+  process.env.PORT = process.env.PORT || '6969'
   process.env.ELECTRON_RUN = '1'
 
   const serverRoot = resolvePath('server')
