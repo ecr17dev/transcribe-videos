@@ -1,6 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import html2pdf from 'html2pdf.js'
+
+const { t } = useI18n()
 import {
   IconSparkles,
   IconListDetails,
@@ -24,21 +27,21 @@ const props = defineProps({ summary: Object, jobId: String })
 const exporting = ref(false)
 const exportLabel = ref('')
 
-const statsCards = [
-  { key: 'topics', label: 'Temas', icon: IconListDetails, color: '#5ab2ff' },
-  { key: 'key_insights', label: 'Insights', icon: IconBulb, color: '#5ce1a8' },
-  { key: 'key_takeaways', label: 'Takeaways', icon: IconBulb, color: '#ffc857' },
-  { key: 'conclusions', label: 'Conclusiones', icon: IconScale, color: '#ff7a59' },
-  { key: 'action_items', label: 'Acciones', icon: IconChecklist, color: '#a78bfa' },
-  { key: 'stats_and_facts', label: 'Datos', icon: IconDatabase, color: '#f472b6' },
-]
+const statsCards = computed(() => [
+  { key: 'topics', label: t('summary.stats.topics'), icon: IconListDetails, color: '#5ab2ff' },
+  { key: 'key_insights', label: t('summary.stats.insights'), icon: IconBulb, color: '#5ce1a8' },
+  { key: 'key_takeaways', label: t('summary.stats.takeaways'), icon: IconBulb, color: '#ffc857' },
+  { key: 'conclusions', label: t('summary.stats.conclusions'), icon: IconScale, color: '#ff7a59' },
+  { key: 'action_items', label: t('summary.stats.actions'), icon: IconChecklist, color: '#a78bfa' },
+  { key: 'stats_and_facts', label: t('summary.stats.data'), icon: IconDatabase, color: '#f472b6' },
+])
 
 function getCount(key) {
   const val = props.summary?.[key]
   return Array.isArray(val) ? val.length : 0
 }
 
-const visibleStats = statsCards.filter(s => getCount(s.key) > 0)
+const visibleStats = computed(() => statsCards.value.filter(s => getCount(s.key) > 0))
 
 const showTopics = props.summary?.topics?.length > 0
 const showStatsFacts = props.summary?.stats_and_facts?.length > 0
@@ -53,11 +56,11 @@ async function downloadPDF() {
   if (!el) return
 
   exporting.value = true
-  exportLabel.value = 'Generando PDF...'
+    exportLabel.value = t('summary.generatingPdf')
 
   const opt = {
     margin: [10, 10, 10, 10],
-    filename: 'informe_resumen.pdf',
+    filename: t('summary.pdfFilename'),
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: {
       scale: 2,
@@ -77,16 +80,16 @@ async function downloadPDF() {
 async function downloadDocx() {
   if (!props.jobId) return
   exporting.value = true
-  exportLabel.value = 'Generando DOCX...'
+    exportLabel.value = t('summary.generatingDocx')
 
   try {
     const res = await fetch(`/api/jobs/${props.jobId}/export/docx`)
-    if (!res.ok) throw new Error('Error al generar DOCX')
+    if (!res.ok) throw new Error(t('summary.errorDocx'))
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'informe_resumen.docx'
+    a.download = t('summary.docxFilename')
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -100,23 +103,23 @@ async function downloadDocx() {
 <template>
   <div class="summary-view">
     <div class="toolbar">
-      <span class="toolbar-title"><IconClipboardText :size="18" :stroke="1.8" /> Informe Resumen</span>
+      <span class="toolbar-title"><IconClipboardText :size="18" :stroke="1.8" /> {{ t('summary.heading') }}</span>
       <div class="toolbar-actions">
         <span v-if="exporting" class="exporting-label">{{ exportLabel }}</span>
-        <button :disabled="exporting" @click="downloadPDF" class="btn-export pdf-btn" title="Descargar PDF">
+        <button :disabled="exporting" @click="downloadPDF" class="btn-export pdf-btn" :title="t('summary.pdfTitle')">
           <IconFileTypePdf :size="16" />
-          <span>PDF</span>
+          <span>{{ t('summary.pdf') }}</span>
         </button>
-        <button v-if="jobId" :disabled="exporting" @click="downloadDocx" class="btn-export docx-btn" title="Descargar Word">
+        <button v-if="jobId" :disabled="exporting" @click="downloadDocx" class="btn-export docx-btn" :title="t('summary.docxTitle')">
           <IconFileTypeDocx :size="16" />
-          <span>Word</span>
+          <span>{{ t('summary.docx') }}</span>
         </button>
       </div>
     </div>
 
     <div v-if="!summary" class="empty-state">
       <IconClipboardText :size="32" :stroke="1.2" />
-      <p>No hay resumen disponible</p>
+      <p>{{ t('summary.empty') }}</p>
     </div>
 
     <div v-else id="summary-export-content" class="summary-content">
@@ -133,7 +136,7 @@ async function downloadDocx() {
 
       <!-- Main Idea -->
       <section v-if="summary.one_liner || summary.main_idea" class="section hero-card">
-        <div class="hero-badge"><IconSparkles :size="14" :stroke="2" /> Idea Central</div>
+        <div class="hero-badge"><IconSparkles :size="14" :stroke="2" /> {{ t('summary.sections.mainIdea') }}</div>
         <p class="hero-text">{{ summary.one_liner || summary.main_idea }}</p>
       </section>
 
@@ -141,7 +144,7 @@ async function downloadDocx() {
       <section v-if="summary.executive_paragraph" class="section exec-card">
         <h3 class="section-heading">
           <IconClipboardText :size="16" :stroke="1.8" />
-          Resumen Ejecutivo
+          {{ t('summary.sections.executiveSummary') }}
         </h3>
         <p class="exec-text">{{ summary.executive_paragraph }}</p>
       </section>
@@ -150,7 +153,7 @@ async function downloadDocx() {
       <section v-if="showKeyTakeaways" class="section">
         <h3 class="section-heading">
           <IconBulb :size="16" :stroke="1.8" />
-          Key Takeaways
+          {{ t('summary.sections.keyTakeaways') }}
         </h3>
         <div class="takeaways-grid">
           <div v-for="(item, i) in summary.key_takeaways" :key="i" class="takeaway-card">
@@ -164,7 +167,7 @@ async function downloadDocx() {
       <section v-if="showTopics" class="section">
         <h3 class="section-heading">
           <IconListDetails :size="16" :stroke="1.8" />
-          Temas Tratados
+          {{ t('summary.sections.topics') }}
           <span class="section-count">{{ summary.topics.length }}</span>
         </h3>
         <div class="topics-grid">
@@ -182,15 +185,15 @@ async function downloadDocx() {
       <section v-if="showStatsFacts" class="section">
         <h3 class="section-heading">
           <IconDatabase :size="16" :stroke="1.8" />
-          Datos y Cifras
+          {{ t('summary.sections.dataTable') }}
           <span class="section-count">{{ summary.stats_and_facts.length }}</span>
         </h3>
         <div class="data-table-wrap">
           <table class="data-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Dato / Metrica</th>
+                <th>{{ t('summary.sections.dataColNum') }}</th>
+                <th>{{ t('summary.sections.dataColMetric') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -207,7 +210,7 @@ async function downloadDocx() {
       <section v-if="showKeyInsights" class="section">
         <h3 class="section-heading">
           <IconBulb :size="16" :stroke="1.8" />
-          Insights Clave
+          {{ t('summary.sections.keyInsights') }}
           <span class="section-count">{{ summary.key_insights.length }}</span>
         </h3>
         <div class="insights-list">
@@ -223,7 +226,7 @@ async function downloadDocx() {
         <section v-if="showConclusions" class="section col-section">
           <h3 class="section-heading">
             <IconScale :size="16" :stroke="1.8" />
-            Conclusiones
+            {{ t('summary.sections.conclusions') }}
             <span class="section-count">{{ summary.conclusions.length }}</span>
           </h3>
           <ul class="conclusion-list">
@@ -237,7 +240,7 @@ async function downloadDocx() {
         <section v-if="showDecisions" class="section col-section">
           <h3 class="section-heading">
             <IconGavel :size="16" :stroke="1.8" />
-            Decisiones Clave
+            {{ t('summary.sections.keyDecisions') }}
             <span class="section-count">{{ summary.key_decisions.length }}</span>
           </h3>
           <ul class="decision-list">
@@ -253,7 +256,7 @@ async function downloadDocx() {
       <section v-if="showActions" class="section">
         <h3 class="section-heading">
           <IconTargetArrow :size="16" :stroke="1.8" />
-          Acciones y Proximos Pasos
+          {{ t('summary.sections.actions') }}
           <span class="section-count">{{ summary.action_items.length }}</span>
         </h3>
         <div class="actions-grid">
@@ -267,7 +270,7 @@ async function downloadDocx() {
       </section>
 
       <!-- Watermark -->
-      <div class="watermark">TranscribeVideos</div>
+      <div class="watermark">{{ t('summary.watermark') }}</div>
     </div>
   </div>
 </template>

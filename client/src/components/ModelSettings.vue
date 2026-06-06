@@ -1,5 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const emit = defineEmits(['providers-changed'])
 
@@ -11,16 +14,16 @@ const providers = ref({})
 const saving = ref(false)
 const saved = ref(false)
 
-const SUMMARY_MODELS = [
-  { id: 'gpt-4o-mini', label: 'GPT-4o Mini', desc: 'Economico y rapido (recomendado)' },
-  { id: 'gpt-4o', label: 'GPT-4o', desc: 'Mayor calidad, mas costoso' },
-  { id: 'gpt-4.1', label: 'GPT-4.1', desc: 'Ultimo modelo, maxima calidad' },
-]
+const SUMMARY_MODELS = computed(() => [
+  { id: 'gpt-4o-mini', label: t('modelSettings.gpt4oMini'), desc: t('modelSettings.gpt4oMiniDesc') },
+  { id: 'gpt-4o', label: t('modelSettings.gpt4o'), desc: t('modelSettings.gpt4oDesc') },
+  { id: 'gpt-4.1', label: t('modelSettings.gpt41'), desc: t('modelSettings.gpt41Desc') },
+])
 
-const MAPS_MODELS = [
-  { id: 'gpt-4o-mini', label: 'GPT-4o Mini', desc: 'Economico para mapas mensuales' },
-  { id: 'gpt-4o', label: 'GPT-4o', desc: 'Mayor calidad en grafos' },
-]
+const MAPS_MODELS = computed(() => [
+  { id: 'gpt-4o-mini', label: t('modelSettings.gpt4oMiniMonthly'), desc: t('modelSettings.gpt4oMiniMonthlyDesc') },
+  { id: 'gpt-4o', label: t('modelSettings.gpt4oMonthly'), desc: t('modelSettings.gpt4oMonthlyDesc') },
+])
 
 onMounted(async () => {
   try {
@@ -69,8 +72,8 @@ const configuredProviders = () => {
 <template>
   <div class="model-settings">
     <div class="setting-group">
-      <label class="setting-label">Proveedor STT por defecto</label>
-      <p class="setting-desc">Proveedor de Speech-to-Text usado para nuevas transcripciones.</p>
+      <label class="setting-label">{{ t('modelSettings.sttProvider') }}</label>
+      <p class="setting-desc">{{ t('modelSettings.sttProviderDesc') }}</p>
       <select v-model="defaultSttProvider" class="setting-select">
         <option
           v-for="p in configuredProviders()"
@@ -80,14 +83,14 @@ const configuredProviders = () => {
           {{ p.label }}
         </option>
         <option v-if="configuredProviders().length === 0" value="openai" disabled>
-          OpenAI (no configurado)
+          {{ t('modelSettings.noProviders') }}
         </option>
       </select>
     </div>
 
     <div class="setting-group">
-      <label class="setting-label">Modelo para Resumenes</label>
-      <p class="setting-desc">Modelo GPT usado para generar resumenes y analisis.</p>
+      <label class="setting-label">{{ t('modelSettings.summaryModel') }}</label>
+      <p class="setting-desc">{{ t('modelSettings.summaryModelDesc') }}</p>
       <div class="model-options">
         <label
           v-for="m in SUMMARY_MODELS"
@@ -109,20 +112,17 @@ const configuredProviders = () => {
     </div>
 
     <div class="setting-group">
-      <label class="setting-label">Resumen en 2 pasos</label>
-      <p class="setting-desc">
-        Paso 1 extrae datos brutos. Paso 2 los estructura.
-        Mejor calidad pero ~2x tokens. Solo aplica a transcripciones >1500 palabras.
-      </p>
+      <label class="setting-label">{{ t('modelSettings.twoPass') }}</label>
+      <p class="setting-desc">{{ t('modelSettings.twoPassDesc') }}</p>
       <label class="toggle-row">
         <input type="checkbox" v-model="twoPassSummary" />
-        <span>Activado</span>
+        <span>{{ t('modelSettings.enabled') }}</span>
       </label>
     </div>
 
     <div class="setting-group">
-      <label class="setting-label">Modelo para Mapas Mensuales</label>
-      <p class="setting-desc">Modelo GPT usado para generar el analisis mensual y grafos.</p>
+      <label class="setting-label">{{ t('modelSettings.monthlyModel') }}</label>
+      <p class="setting-desc">{{ t('modelSettings.monthlyModelDesc') }}</p>
       <div class="model-options">
         <label
           v-for="m in MAPS_MODELS"
@@ -144,9 +144,9 @@ const configuredProviders = () => {
     </div>
 
     <button class="btn-save-all" :disabled="saving" @click="save">
-      {{ saving ? 'Guardando...' : 'Guardar preferencias' }}
+      {{ saving ? t('modelSettings.saving') : t('modelSettings.save') }}
     </button>
-    <span v-if="saved" class="saved-msg">Guardado</span>
+    <span v-if="saved" class="saved-msg">{{ t('modelSettings.saved') }}</span>
   </div>
 </template>
 

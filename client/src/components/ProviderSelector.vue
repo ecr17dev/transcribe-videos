@@ -1,5 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({ provider: String, model: String })
 const emit = defineEmits(['update:provider', 'update:model'])
@@ -59,7 +62,7 @@ function onProviderChange(id) {
 <template>
   <div class="provider-selector">
     <div class="row">
-      <label class="sel-label">STT:</label>
+      <label class="sel-label">{{ t('providerSelector.label') }}</label>
       <select
         class="sel"
         :value="props.provider"
@@ -69,7 +72,7 @@ function onProviderChange(id) {
           {{ p.label }}
         </option>
         <option v-if="providers.length === 0" value="" disabled>
-          No hay proveedores configurados
+          {{ t('providerSelector.empty') }}
         </option>
       </select>
 

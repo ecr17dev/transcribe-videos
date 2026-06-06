@@ -1,8 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import ProviderSettings from './ProviderSettings.vue'
 import PromptSettings from './PromptSettings.vue'
 import ModelSettings from './ModelSettings.vue'
+
+const { t } = useI18n()
 
 const emit = defineEmits(['close', 'providersChanged'])
 
@@ -21,18 +24,18 @@ function onProvidersChanged() {
   emit('providersChanged')
 }
 
-const TABS = [
-  { key: 'providers', label: 'Proveedores' },
-  { key: 'models', label: 'Modelos' },
-  { key: 'prompts', label: 'Prompts' },
-]
+const TABS = computed(() => [
+  { key: 'providers', label: t('settings.tabs.providers') },
+  { key: 'models', label: t('settings.tabs.models') },
+  { key: 'prompts', label: t('settings.tabs.prompts') },
+])
 </script>
 
 <template>
   <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal">
       <div class="modal-header">
-        <h3>Configuracion</h3>
+        <h3>{{ t('settings.heading') }}</h3>
         <button class="modal-close" @click="emit('close')">&times;</button>
       </div>
 

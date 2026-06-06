@@ -1,5 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const emit = defineEmits(['select', 'delete'])
 const history = ref([])
@@ -22,23 +25,30 @@ function formatDate(ts) {
   const now = new Date()
   const diff = now - d
 
-  if (diff < 60000) return 'Ahora'
-  if (diff < 3600000) return `Hace ${Math.floor(diff / 60000)} min`
-  if (diff < 86400000) return `Hace ${Math.floor(diff / 3600000)} h`
+  if (diff < 60000) return t('history.now')
+  if (diff < 3600000) return t('history.minAgo', { n: Math.floor(diff / 60000) })
+  if (diff < 86400000) return t('history.hourAgo', { n: Math.floor(diff / 3600000) })
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
 function statusLabel(s) {
-  const map = { done: 'Completado', error: 'Error', extracting: 'Procesando', transcribing: 'Transcribiendo', summarizing: 'Resumiendo', pending: 'Pendiente' }
+  const map = {
+    done: t('history.status.done'),
+    error: t('history.status.error'),
+    extracting: t('history.status.extracting'),
+    transcribing: t('history.status.transcribing'),
+    summarizing: t('history.status.summarizing'),
+    pending: t('history.status.pending'),
+  }
   return map[s] || s
 }
 </script>
 
 <template>
   <div v-if="history.length > 0" class="history">
-    <h3 class="history-title">Historial de transcripciones</h3>
+    <h3 class="history-title">{{ t('history.heading') }}</h3>
 
-    <div v-if="loading" class="loading">Cargando historial...</div>
+    <div v-if="loading" class="loading">{{ t('history.loading') }}</div>
 
     <div v-else class="history-list">
       <div
@@ -57,7 +67,7 @@ function statusLabel(s) {
           <button
             class="item-delete"
             @click.stop="emit('delete', item.id)"
-            title="Eliminar"
+            :title="t('history.delete')"
           >&#10005;</button>
         </div>
       </div>

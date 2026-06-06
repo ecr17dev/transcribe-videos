@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node --env-file=../.env src/index.js",
     "dev": "node --watch --env-file=../.env src/index.js",
-    "postinstall": "npm rebuild better-sqlite3 || true"
+    "postinstall": "npm rebuild better-sqlite3 || exit 0"
   },
   "dependencies": {
     "@deepgram/sdk": "^5.4.0",

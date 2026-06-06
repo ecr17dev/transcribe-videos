@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconWaveSine,
   IconFileAnalytics,
@@ -8,15 +9,17 @@ import {
   IconLoader2,
 } from '@tabler/icons-vue'
 
+const { t } = useI18n()
+
 const props = defineProps({ job: Object })
 const elapsed = ref('00:00')
 let timer = null
 
-const steps = [
-  { num: 1, label: 'Extrayendo audio', icon: IconWaveSine },
-  { num: 2, label: 'Transcribiendo', icon: IconFileAnalytics },
-  { num: 3, label: 'Resumen e infografia', icon: IconLayoutDashboard },
-]
+const steps = computed(() => [
+  { num: 1, label: t('progress.extracting'), icon: IconWaveSine },
+  { num: 2, label: t('progress.transcribing'), icon: IconFileAnalytics },
+  { num: 3, label: t('progress.summarizing'), icon: IconLayoutDashboard },
+])
 
 function startTimer() {
   timer = setInterval(() => {

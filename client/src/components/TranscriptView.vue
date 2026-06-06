@@ -1,5 +1,8 @@
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({ text: String })
 
@@ -27,13 +30,13 @@ async function copyText() {
 <template>
   <div class="transcript-view">
     <div class="toolbar">
-      <span class="label">Transcripcion completa</span>
+      <span class="label">{{ t('transcript.heading') }}</span>
       <button @click="copyText" class="btn-copy">
-        {{ copied ? 'Copiado' : 'Copiar texto' }}
+        {{ copied ? t('transcript.copied') : t('transcript.copy') }}
       </button>
     </div>
     <div class="transcript-content">
-      <p v-if="!text" class="empty">No hay transcripcion disponible</p>
+      <p v-if="!text" class="empty">{{ t('transcript.empty') }}</p>
       <div v-else class="transcript-text" v-text="text"></div>
     </div>
   </div>

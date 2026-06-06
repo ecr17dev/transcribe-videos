@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconCloudUpload,
   IconBolt,
@@ -7,6 +8,8 @@ import {
   IconPlayerSkipForward,
 } from '@tabler/icons-vue'
 import ProviderSelector from './ProviderSelector.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   model: String,
@@ -48,11 +51,11 @@ function onFileChange(e) {
 function handleFile(file) {
   const validTypes = /\.(mp4|mov|avi|mkv|webm|flv|wmv|m4v|3gp|mp3|wav|m4a|ogg|flac|opus|aac|wma)$/i
   if (!validTypes.test(file.name)) {
-    emit('error', 'Formato no soportado. Usa video (MP4, MOV) o audio (MP3, WAV, M4A, etc.)')
+    emit('error', t('upload.errorFormat'))
     return
   }
   if (file.size > 5 * 1024 * 1024 * 1024) {
-    emit('error', 'Archivo demasiado grande (maximo 5GB)')
+    emit('error', t('upload.errorSize'))
     return
   }
   emit('error', '')
@@ -63,8 +66,8 @@ function handleFile(file) {
 <template>
   <div class="upload-container">
     <div class="upload-header">
-      <h2>Sube un video o audio para transcribir</h2>
-      <p class="subtitle">Genera una transcripcion clara, un resumen util y una infografia visual lista para presentar.</p>
+      <h2>{{ t('upload.heading') }}</h2>
+      <p class="subtitle">{{ t('upload.subtitle') }}</p>
     </div>
 
     <div
@@ -83,8 +86,8 @@ function handleFile(file) {
       />
       <div class="dropzone-content">
         <IconCloudUpload class="drop-icon" :size="50" :stroke="1.5" />
-        <p class="drop-text">Arrastra un archivo aqui o haz clic para seleccionar</p>
-        <p class="drop-hint">Soporta video y audio hasta 5 GB. El procesamiento queda en tu instancia.</p>
+        <p class="drop-text">{{ t('upload.dropzone') }}</p>
+        <p class="drop-hint">{{ t('upload.dropzoneHint') }}</p>
       </div>
     </div>
 
@@ -96,7 +99,7 @@ function handleFile(file) {
     />
 
     <div class="model-selector">
-      <label class="model-label">Modelo para analisis e infografia:</label>
+      <label class="model-label">{{ t('upload.modelLabel') }}</label>
       <div class="model-options">
         <label class="model-option" :class="{ selected: props.model === 'gpt-4o-mini' }">
           <input
@@ -106,8 +109,8 @@ function handleFile(file) {
             @change="$emit('update:model', 'gpt-4o-mini')"
           />
           <div class="model-info">
-            <span class="model-name"><IconBolt :size="15" /> GPT-4o Mini</span>
-            <span class="model-desc">Mas rapido y economico para iterar.</span>
+            <span class="model-name"><IconBolt :size="15" /> {{ t('upload.gpt4oMini') }}</span>
+            <span class="model-desc">{{ t('upload.gpt4oMiniDesc') }}</span>
           </div>
         </label>
         <label class="model-option" :class="{ selected: props.model === 'gpt-4o' }">
@@ -118,8 +121,8 @@ function handleFile(file) {
             @change="$emit('update:model', 'gpt-4o')"
           />
           <div class="model-info">
-            <span class="model-name"><IconSparkles :size="15" /> GPT-4o</span>
-            <span class="model-desc">Mayor calidad para piezas visuales mas finas.</span>
+            <span class="model-name"><IconSparkles :size="15" /> {{ t('upload.gpt4o') }}</span>
+            <span class="model-desc">{{ t('upload.gpt4oDesc') }}</span>
           </div>
         </label>
       </div>
@@ -131,8 +134,8 @@ function handleFile(file) {
         :checked="props.transcribeOnly"
         @change="$emit('update:transcribeOnly', $event.target.checked)"
       />
-      <span class="toggle-label"><IconPlayerSkipForward :size="15" /> Solo transcribir</span>
-      <span class="toggle-desc">Sin resumen ni infografia</span>
+      <span class="toggle-label"><IconPlayerSkipForward :size="15" /> {{ t('upload.transcribeOnly') }}</span>
+      <span class="toggle-desc">{{ t('upload.transcribeOnlyDesc') }}</span>
     </label>
   </div>
 </template>

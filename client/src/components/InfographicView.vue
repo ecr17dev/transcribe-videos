@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import html2pdf from 'html2pdf.js'
+
+const { t } = useI18n()
 import {
   IconChartInfographic,
   IconFileTypePdf,
@@ -186,10 +189,10 @@ onMounted(() => {
 const highlightCards = computed(() => {
   if (!props.summary) return []
   return [
-    { label: 'Temas', value: props.summary.topics?.length || 0, icon: IconListDetails },
-    { label: 'Insights', value: props.summary.key_insights?.length || 0, icon: IconBulb },
-    { label: 'Acciones', value: props.summary.action_items?.length || 0, icon: IconTargetArrow },
-    { label: 'Datos', value: props.summary.stats_and_facts?.length || 0, icon: IconChartBarPopular },
+    { label: t('infographic.synthetic.topics'), value: props.summary.topics?.length || 0, icon: IconListDetails },
+    { label: t('infographic.synthetic.insights'), value: props.summary.key_insights?.length || 0, icon: IconBulb },
+    { label: t('infographic.synthetic.actions'), value: props.summary.action_items?.length || 0, icon: IconTargetArrow },
+    { label: t('infographic.synthetic.data'), value: props.summary.stats_and_facts?.length || 0, icon: IconChartBarPopular },
   ].filter((item) => item.value > 0)
 })
 
@@ -209,7 +212,7 @@ async function downloadPDF() {
 
   const opt = {
     margin: [5, 5, 5, 5],
-    filename: 'infografia.pdf',
+    filename: t('infographic.pdfFilename'),
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, backgroundColor: '#0a0e14', logging: false },
     jsPDF: { unit: 'mm', format: 'a3', orientation: 'landscape' },
@@ -235,15 +238,15 @@ async function copyHTML() {
 <template>
   <div class="infographic-view">
     <div class="toolbar">
-      <span class="toolbar-title"><IconChartInfographic :size="18" :stroke="1.8" /> Infografia</span>
+      <span class="toolbar-title"><IconChartInfographic :size="18" :stroke="1.8" /> {{ t('infographic.heading') }}</span>
       <div class="toolbar-actions">
-        <button v-if="html" @click="copyHTML" class="btn-tool" title="Copiar HTML">
+        <button v-if="html" @click="copyHTML" class="btn-tool" :title="t('infographic.copyHtml')">
           <component :is="copied ? IconCheck : IconCopy" :size="15" />
-          <span>{{ copied ? 'Copiado' : 'HTML' }}</span>
+          <span>{{ copied ? t('infographic.copied') : t('infographic.html') }}</span>
         </button>
-        <button :disabled="exporting" @click="downloadPDF" class="btn-tool pdf-btn" title="Descargar PDF">
+        <button :disabled="exporting" @click="downloadPDF" class="btn-tool pdf-btn" :title="t('infographic.pdfTitle')">
           <IconFileTypePdf :size="16" />
-          <span>{{ exporting ? 'Generando...' : 'PDF' }}</span>
+          <span>{{ exporting ? t('infographic.generating') : t('infographic.pdf') }}</span>
         </button>
       </div>
     </div>
@@ -254,10 +257,10 @@ async function copyHTML() {
     <!-- SYNTHETIC: built from summary data -->
     <div v-else-if="renderMode === 'synthetic'" class="fallback-infographic">
       <div class="fallback-canvas">
-        <p class="eyebrow">Infografia sintetica</p>
-        <h3>{{ summary?.one_liner || summary?.main_idea || 'No hay infografia disponible' }}</h3>
+        <p class="eyebrow">{{ t('infographic.synthetic.eyebrow') }}</p>
+        <h3>{{ summary?.one_liner || summary?.main_idea || t('infographic.synthetic.noData') }}</h3>
         <p class="canvas-copy">
-          {{ summary?.executive_paragraph || 'La infografia se genera automaticamente al procesar el video completo.' }}
+          {{ summary?.executive_paragraph || t('infographic.synthetic.desc') }}
         </p>
 
         <div v-if="highlightCards.length" class="highlight-row">
@@ -277,7 +280,7 @@ async function copyHTML() {
         </div>
 
         <div v-if="fallbackNarrative.length" class="narrative-block">
-          <h4>Lo mas relevante</h4>
+          <h4>{{ t('infographic.synthetic.relevant') }}</h4>
           <ul>
             <li v-for="(item, index) in fallbackNarrative" :key="index">{{ item }}</li>
           </ul>
@@ -354,7 +357,7 @@ async function copyHTML() {
       <section v-if="data.topic_sections?.length" class="info-topics">
         <h3 class="info-section-title">
           <IconListDetails :size="16" :stroke="1.8" />
-          Temas en Profundidad
+          {{ t('infographic.sections.topicsDeep') }}
         </h3>
         <div class="info-topic-grid">
           <div v-for="(t, i) in data.topic_sections" :key="i" class="info-topic-card">
@@ -380,7 +383,7 @@ async function copyHTML() {
       <section v-if="data.timeline?.length" class="info-timeline">
         <h3 class="info-section-title">
           <IconChartDots :size="16" :stroke="1.8" />
-          Flujo del Contenido
+          {{ t('infographic.sections.flow') }}
         </h3>
         <div class="timeline-track">
           <div v-for="(phase, i) in data.timeline" :key="i" class="timeline-node">
@@ -404,7 +407,7 @@ async function copyHTML() {
         </h3>
         <div class="conclusion-grid">
           <div v-if="data.conclusion.key_takeaways?.length" class="conclusion-col">
-            <h4>Puntos Clave</h4>
+            <h4>{{ t('infographic.sections.keyPoints') }}</h4>
             <ul>
               <li v-for="(kt, i) in data.conclusion.key_takeaways" :key="i">
                 <IconCheck :size="14" :stroke="2.5" class="takeaway-check" />
@@ -413,7 +416,7 @@ async function copyHTML() {
             </ul>
           </div>
           <div v-if="data.conclusion.next_steps?.length" class="conclusion-col">
-            <h4>Proximos Pasos</h4>
+            <h4>{{ t('infographic.sections.nextSteps') }}</h4>
             <ul>
               <li v-for="(ns, i) in data.conclusion.next_steps" :key="i">
                 <IconArrowRight :size="14" :stroke="2" class="nextstep-arrow" />
@@ -424,7 +427,7 @@ async function copyHTML() {
         </div>
       </section>
 
-      <div class="info-footer">TranscribeVideos</div>
+      <div class="info-footer">{{ t('infographic.watermark') }}</div>
     </div>
   </div>
 </template>

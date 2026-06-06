@@ -24,29 +24,105 @@ const GPT4O_MINI_COST_PER_1K_OUT = 0.0006
 const GPT4O_COST_PER_1K_IN = 0.0025
 const GPT4O_COST_PER_1K_OUT = 0.01
 
-const EXTRACTING_MSGS = [
-  'Analizando archivo de video...',
-  'Extrayendo pista de audio...',
-  'Codificando audio a formato optimo...',
-  'Ajustando parametros de calidad (16kHz, mono)...',
-  'Audio extraido correctamente',
-]
+const MSGS = {
+  es: {
+    extracting: [
+      'Analizando archivo de video...',
+      'Extrayendo pista de audio...',
+      'Codificando audio a formato optimo...',
+      'Ajustando parametros de calidad (16kHz, mono)...',
+      'Audio extraido correctamente',
+    ],
+    summarizing: [
+      'Analizando estructura del contenido...',
+      'Identificando temas principales...',
+      'Extrayendo puntos clave y conclusiones...',
+      'Generando resumen ejecutivo...',
+      'Componiendo narrativa visual...',
+      'Formateando resultados...',
+    ],
+    twoPass: [
+      'Paso 1/2: Extrayendo datos brutos del contenido...',
+      'Paso 2/2: Estructurando analisis exhaustivo...',
+      'Preparando salida visual...',
+      'Formateando resultados...',
+    ],
+    audioDetected: 'Archivo de audio detectado',
+    audioReady: (dur) => `Audio listo: ${dur} de duracion`,
+    transComplete: (words) => `Transcripcion completada: ${words} palabras`,
+    transCompleteChunks: (words, chunks) => `Transcripcion completada: ${words} palabras en ${chunks} fragmentos`,
+    chunkProgress: (current, total) => `Fragmento ${current} de ${total}...`,
+    chunkSubstep: (current, total) => `Transcribiendo fragmento ${current} de ${total}`,
+    infographicStep: 'Generando infografia visual...',
+    infographicDetail: 'Creando infografia...',
+    completed: 'Completado con exito',
+    completedLabel: 'Completado',
+    transOnlyComplete: 'Transcripcion completada (sin resumen)',
+    transOnlyLabel: 'Completado (solo transcripcion)',
+    preppingAudio: (label) => `Preparando audio para ${label}...`,
+    sendingAudio: (label) => `Enviando audio a ${label}...`,
+    transcribing: 'Transcribiendo audio...',
+    transReceived: 'Transcripcion recibida correctamente',
+    bigAudio: (count) => `Audio grande detectado: dividiendo en ${count} fragmentos`,
+  },
+  en: {
+    extracting: [
+      'Analyzing video file...',
+      'Extracting audio track...',
+      'Encoding audio to optimal format...',
+      'Adjusting quality parameters (16kHz, mono)...',
+      'Audio extracted successfully',
+    ],
+    summarizing: [
+      'Analyzing content structure...',
+      'Identifying main topics...',
+      'Extracting key points and conclusions...',
+      'Generating executive summary...',
+      'Composing visual narrative...',
+      'Formatting results...',
+    ],
+    twoPass: [
+      'Step 1/2: Extracting raw data from content...',
+      'Step 2/2: Structuring exhaustive analysis...',
+      'Preparing visual output...',
+      'Formatting results...',
+    ],
+    audioDetected: 'Audio file detected',
+    audioReady: (dur) => `Audio ready: ${dur} duration`,
+    transComplete: (words) => `Transcription complete: ${words} words`,
+    transCompleteChunks: (words, chunks) => `Transcription complete: ${words} words in ${chunks} chunks`,
+    chunkProgress: (current, total) => `Chunk ${current} of ${total}...`,
+    chunkSubstep: (current, total) => `Transcribing chunk ${current} of ${total}`,
+    infographicStep: 'Generating visual infographic...',
+    infographicDetail: 'Creating infographic...',
+    completed: 'Completed successfully',
+    completedLabel: 'Completed',
+    transOnlyComplete: 'Transcription complete (no summary)',
+    transOnlyLabel: 'Completed (transcribe only)',
+    preppingAudio: (label) => `Preparing audio for ${label}...`,
+    sendingAudio: (label) => `Sending audio to ${label}...`,
+    transcribing: 'Transcribing audio...',
+    transReceived: 'Transcription received successfully',
+    bigAudio: (count) => `Large audio detected: splitting into ${count} chunks`,
+  },
+}
 
-const SUMMARIZING_MSGS = [
-  'Analizando estructura del contenido...',
-  'Identificando temas principales...',
-  'Extrayendo puntos clave y conclusiones...',
-  'Generando resumen ejecutivo...',
-  'Componiendo narrativa visual...',
-  'Formateando resultados...',
-]
+function t(lang, key, ...args) {
+  const locale = MSGS[lang] || MSGS.es
+  const val = locale[key]
+  if (typeof val === 'function') return val(...args)
+  return val || MSGS.es[key]
+}
 
-const TWO_PASS_MSGS = [
-  'Paso 1/2: Extrayendo datos brutos del contenido...',
-  'Paso 2/2: Estructurando analisis exhaustivo...',
-  'Preparando salida visual...',
-  'Formateando resultados...',
-]
+function getLang(req) {
+  const q = req.query?.lang
+  if (q === 'en' || q === 'es') return q
+  try {
+    const formLang = req.body?.lang
+    if (formLang === 'en' || formLang === 'es') return formLang
+  } catch {}
+  return 'es'
+}
 
 setTimeout(() => {
   try {
@@ -94,13 +170,14 @@ router.post('/jobs', upload.single('video'), async (req, res) => {
     const transcribeOnly = req.body.transcribeOnly === 'true' || req.body.transcribeOnly === true
     const sttProvider = req.body.sttProvider || getSetting('default_stt_provider', 'openai')
     const sttModel = req.body.sttModel || 'whisper-1'
+    const lang = req.body.lang === 'en' ? 'en' : 'es'
 
     const job = {
       id: jobId,
       status: 'extracting',
       step: 1,
       progress: 0,
-      stepDetail: EXTRACTING_MSGS[0],
+      stepDetail: t(lang, 'extracting')[0],
       subSteps: [],
       transcript: null,
       summary: null,
@@ -114,13 +191,14 @@ router.post('/jobs', upload.single('video'), async (req, res) => {
       transcribeOnly,
       sttProvider,
       sttModel,
+      lang,
       startedAt: Date.now(),
       createdAt: Date.now(),
     }
 
     jobs.set(jobId, job)
     insertJob(job)
-    processJob(jobId, videoPath, model, transcribeOnly)
+    processJob(jobId, videoPath, model, transcribeOnly, lang)
 
     res.json({ jobId })
   } catch (err) {
@@ -185,7 +263,7 @@ router.delete('/jobs/:id', (req, res) => {
   }
 })
 
-async function processJob(jobId, videoPath, model, transcribeOnly = false) {
+async function processJob(jobId, videoPath, model, transcribeOnly = false, lang = 'es') {
   const job = jobs.get(jobId)
   if (!job) return
 
@@ -197,18 +275,18 @@ async function processJob(jobId, videoPath, model, transcribeOnly = false) {
   try {
     if (isAudio) {
       job.status = 'extracting'
-      job.subSteps = [{ text: 'Archivo de audio detectado', done: true }]
+      job.subSteps = [{ text: t(lang, 'audioDetected'), done: true }]
       job.progress = 5
-      job.stepDetail = 'Preparando audio...'
+      job.stepDetail = 'Preparing audio...'
       updateJob(job)
       await sleep(300)
     } else {
       job.status = 'extracting'
-      job.subSteps = EXTRACTING_MSGS.slice(0, 4).map(t => ({ text: t, done: false }))
+      job.subSteps = t(lang, 'extracting').slice(0, 4).map(text => ({ text, done: false }))
 
       for (let i = 0; i < 4; i++) {
         job.subSteps[i].done = true
-        job.stepDetail = EXTRACTING_MSGS[i]
+        job.stepDetail = t(lang, 'extracting')[i]
         job.progress = Math.round((i + 1) / 4 * 5)
         updateJob(job)
         await sleep(600)
@@ -222,7 +300,7 @@ async function processJob(jobId, videoPath, model, transcribeOnly = false) {
       ? `${Math.floor(durationSeconds / 3600)}h ${Math.floor((durationSeconds % 3600) / 60)}m`
       : `${Math.floor(durationSeconds / 60)}m`
 
-    job.subSteps.push({ text: `Audio listo: ${durationFormatted} de duracion`, done: true })
+    job.subSteps.push({ text: t(lang, 'audioReady', durationFormatted), done: true })
     updateJob(job)
 
     job.status = 'transcribing'
@@ -249,9 +327,9 @@ async function processJob(jobId, videoPath, model, transcribeOnly = false) {
 
       job.status = 'done'
       job.step = 3
-      job.subSteps.push({ text: 'Transcripcion completada (sin resumen)', done: true })
+      job.subSteps.push({ text: t(lang, 'transOnlyComplete'), done: true })
       job.progress = 100
-      job.stepDetail = 'Completado (solo transcripcion)'
+      job.stepDetail = t(lang, 'transOnlyLabel')
       updateJob(job)
       return
     }
@@ -260,8 +338,8 @@ async function processJob(jobId, videoPath, model, transcribeOnly = false) {
     job.step = 3
 
     const useTwoPass = getSetting('two_pass_summary', 'true') === 'true'
-    const msgs = useTwoPass ? TWO_PASS_MSGS : SUMMARIZING_MSGS
-    job.subSteps = msgs.map(t => ({ text: t, done: false }))
+    const msgs = useTwoPass ? t(lang, 'twoPass') : t(lang, 'summarizing')
+    job.subSteps = msgs.map(text => ({ text, done: false }))
     job.progress = 93
 
     for (let i = 0; i < msgs.length; i++) {
@@ -290,8 +368,8 @@ async function processJob(jobId, videoPath, model, transcribeOnly = false) {
     job.detailedSummary = raw
 
     // Generate infographic (structured data + legacy HTML)
-    job.subSteps.push({ text: 'Generando infografia visual...', done: false })
-    job.stepDetail = 'Creando infografia...'
+    job.subSteps.push({ text: t(lang, 'infographicStep'), done: false })
+    job.stepDetail = t(lang, 'infographicDetail')
     updateJob(job)
 
     let infographic = null
@@ -337,9 +415,9 @@ async function processJob(jobId, videoPath, model, transcribeOnly = false) {
 
     job.status = 'done'
     job.step = 4
-    job.subSteps.push({ text: 'Completado con exito', done: true })
+    job.subSteps.push({ text: t(lang, 'completed'), done: true })
     job.progress = 100
-    job.stepDetail = 'Completado'
+    job.stepDetail = t(lang, 'completedLabel')
 
     updateJob(job)
   } catch (err) {

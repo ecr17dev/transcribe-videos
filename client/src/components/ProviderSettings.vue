@@ -1,5 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const providers = ref({})
 const editedKeys = ref({})
@@ -114,8 +117,8 @@ function updateField(id, fieldKey, value) {
           <span class="status-dot" :class="{ active: provider.config?.configured }" />
           <strong>{{ provider.label }}</strong>
         </div>
-        <span v-if="provider.config?.configured" class="badge configured-badge">Configurado</span>
-        <span v-else class="badge not-configured">Sin configurar</span>
+        <span v-if="provider.config?.configured" class="badge configured-badge">{{ t('providerSettings.configured') }}</span>
+        <span v-else class="badge not-configured">{{ t('providerSettings.notConfigured') }}</span>
       </div>
 
       <div class="provider-fields">
@@ -144,20 +147,20 @@ function updateField(id, fieldKey, value) {
       </div>
 
       <div class="provider-actions">
-        <button class="btn btn-save" @click="saveProvider(id)">Guardar</button>
+        <button class="btn btn-save" @click="saveProvider(id)">{{ t('providerSettings.save') }}</button>
         <button
           class="btn btn-test"
           :disabled="!hasConfig(id) || testing[id]"
           @click="testProvider(id)"
         >
-          {{ testing[id] ? 'Probando...' : 'Probar' }}
+          {{ testing[id] ? t('providerSettings.testing') : t('providerSettings.test') }}
         </button>
         <button
           v-if="hasConfig(id)"
           class="btn btn-delete"
           @click="deleteProvider(id)"
         >
-          Eliminar
+          {{ t('providerSettings.delete') }}
         </button>
       </div>
 
@@ -165,17 +168,17 @@ function updateField(id, fieldKey, value) {
 
       <div v-if="testResults[id]" :class="['test-result', { success: testResults[id].success }]">
         <template v-if="testResults[id].success">
-          Conexion exitosa
+          {{ t('providerSettings.testSuccess') }}
           <span v-if="testResults[id].models">
-            - Whisper: {{ testResults[id].models.whisper ? 'Si' : 'No' }},
-            GPT: {{ testResults[id].models.gpt4oMini ? 'Si' : 'No' }}
+            - Whisper: {{ testResults[id].models.whisper ? t('providerSettings.testYes') : t('providerSettings.testNo') }},
+            GPT: {{ testResults[id].models.gpt4oMini ? t('providerSettings.testYes') : t('providerSettings.testNo') }}
           </span>
           <span v-if="testResults[id].projects !== undefined">
-            - {{ testResults[id].projects }} proyectos
+            - {{ testResults[id].projects }} {{ t('providerSettings.testProjects') }}
           </span>
         </template>
         <template v-else>
-          Error: {{ testResults[id].error }}
+          {{ t('providerSettings.testErrorPrefix') }} {{ testResults[id].error }}
         </template>
       </div>
     </div>

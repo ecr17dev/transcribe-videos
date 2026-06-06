@@ -16,6 +16,10 @@ import SummaryView from './components/SummaryView.vue'
 import InfographicView from './components/InfographicView.vue'
 import JobHistory from './components/JobHistory.vue'
 import SettingsModal from './components/SettingsModal.vue'
+import LangSwitcher from './components/LangSwitcher.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const {
   job,
@@ -41,15 +45,15 @@ const tabs = computed(() => {
   if (!job.value) return []
 
   const list = [
-    { key: 'transcript', label: 'Transcripcion', icon: IconFileText },
+    { key: 'transcript', label: t('tabs.transcript'), icon: IconFileText },
   ]
 
   if (job.value.summary) {
-    list.push({ key: 'summary', label: 'Resumen', icon: IconSparkles })
+    list.push({ key: 'summary', label: t('tabs.summary'), icon: IconSparkles })
   }
 
   if (job.value.infographicData || job.value.infographic || job.value.summary) {
-    list.push({ key: 'infographic', label: 'Infografia', icon: IconLayoutDashboard })
+    list.push({ key: 'infographic', label: t('tabs.infographic'), icon: IconLayoutDashboard })
   }
 
   return list
@@ -128,9 +132,12 @@ function onProvidersChanged() {
   <div class="app">
     <header class="app-header">
       <img src="/logo.png" alt="TranscribeVideos" class="logo-img" @click="reset" />
-      <button class="settings-btn" @click="showSettings = true" title="Configuracion">
-        <IconSettings :size="20" :stroke="1.8" />
-      </button>
+      <div class="header-actions">
+        <LangSwitcher />
+        <button class="settings-btn" @click="showSettings = true" :title="t('app.settings')">
+          <IconSettings :size="20" :stroke="1.8" />
+        </button>
+      </div>
     </header>
 
     <main class="app-main">
@@ -159,9 +166,9 @@ function onProvidersChanged() {
         <div class="results-header">
           <button @click="reset" class="btn-back">
             <IconPlayerTrackNext :size="16" />
-            <span>Nuevo video</span>
+            <span>{{ t('app.newVideo') }}</span>
           </button>
-          <h2 class="video-name">{{ job?.videoName || 'Procesando...' }}</h2>
+          <h2 class="video-name">{{ job?.videoName || t('app.processing') }}</h2>
         </div>
 
         <ProgressTracker v-if="job && isProcessing" :job="job" />
@@ -186,11 +193,11 @@ function onProvidersChanged() {
           <InfographicView v-else-if="activeTab === 'infographic'" :html="job.infographic" :summary="job.summary" :infographic-data="job.infographicData" />
 
           <div v-if="job.cost" class="cost-bar">
-            <span>Coste estimado: <strong>${{ job.cost.total }}</strong></span>
+            <span>{{ t('app.costEstimated') }} <strong>${{ job.cost.total }}</strong></span>
             <span class="cost-detail">
               STT ({{ job.cost.sttProvider || 'openai' }}): ${{ job.cost.stt }}
               | {{ job.model }}: ${{ (job.cost.total - job.cost.stt).toFixed(4) }}
-              <template v-if="job.cost.twoPass"> | 2-pass</template>
+              <template v-if="job.cost.twoPass"> | {{ t('app.twoPass') }}</template>
             </span>
           </div>
         </div>
@@ -223,6 +230,12 @@ function onProvidersChanged() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .settings-btn {

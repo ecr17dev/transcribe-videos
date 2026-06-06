@@ -1,12 +1,15 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-const promptKeys = [
-  { key: 'prompt_extraction', label: 'Extraccion (Paso 1 del resumen)', desc: 'Extrae datos brutos de la transcripcion sin estructurar.' },
-  { key: 'prompt_structuring', label: 'Estructuracion (Paso 2 del resumen)', desc: 'Estructura los datos extraidos en JSON analitico.' },
-  { key: 'prompt_legacy_summary', label: 'Resumen Single-Pass', desc: 'Usado cuando el resumen en 2 pasos esta desactivado.' },
-  { key: 'prompt_infographic', label: 'Infografia', desc: 'Genera infografia HTML visual por cada video procesado.' },
-]
+const { t } = useI18n()
+
+const promptKeys = computed(() => [
+  { key: 'prompt_extraction', label: t('promptSettings.extraction'), desc: t('promptSettings.extractionDesc') },
+  { key: 'prompt_structuring', label: t('promptSettings.structuring'), desc: t('promptSettings.structuringDesc') },
+  { key: 'prompt_legacy_summary', label: t('promptSettings.singlePass'), desc: t('promptSettings.singlePassDesc') },
+  { key: 'prompt_infographic', label: t('promptSettings.infographic'), desc: t('promptSettings.infographicDesc') },
+])
 
 const prompts = ref({})
 const editing = ref({})
@@ -32,7 +35,7 @@ async function savePrompt(key) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ [key]: editing.value[key] }),
     })
-    if (!res.ok) throw new Error('Error al guardar')
+    if (!res.ok) throw new Error(t('promptSettings.error'))
     prompts.value[key].current = editing.value[key]
     prompts.value[key].custom = true
     savedMsg.value[key] = true
@@ -69,10 +72,10 @@ function charCount(key) {
       <div class="prompt-header">
         <div class="prompt-title">
           <strong>{{ p.label }}</strong>
-          <span v-if="prompts[p.key]?.custom" class="custom-badge">Personalizado</span>
-          <span v-else class="default-badge">Default</span>
+          <span v-if="prompts[p.key]?.custom" class="custom-badge">{{ t('promptSettings.custom') }}</span>
+          <span v-else class="default-badge">{{ t('promptSettings.default') }}</span>
         </div>
-        <span class="char-counter">{{ charCount(p.key).toLocaleString() }} chars</span>
+        <span class="char-counter">{{ charCount(p.key).toLocaleString() }}{{ t('promptSettings.chars') }}</span>
       </div>
 
       <p class="prompt-desc">{{ p.desc }}</p>
@@ -87,16 +90,16 @@ function charCount(key) {
 
       <div class="prompt-actions">
         <button class="btn btn-save" :disabled="saving[p.key]" @click="savePrompt(p.key)">
-          {{ saving[p.key] ? 'Guardando...' : 'Guardar' }}
+          {{ saving[p.key] ? t('promptSettings.saving') : t('promptSettings.save') }}
         </button>
         <button
           v-if="prompts[p.key]?.custom"
           class="btn btn-reset"
           @click="resetPrompt(p.key)"
         >
-          Restaurar default
+          {{ t('promptSettings.restore') }}
         </button>
-        <span v-if="savedMsg[p.key]" class="saved-msg">Guardado</span>
+        <span v-if="savedMsg[p.key]" class="saved-msg">{{ t('promptSettings.saved') }}</span>
       </div>
     </div>
   </div>
